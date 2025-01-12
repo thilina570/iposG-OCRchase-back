@@ -11,7 +11,28 @@ class AwsTest extends Controller
     public function textTract()
     {
 //        $this->analyzeDocument('bill1.png');
-        $this->analyzeExpense('bill1.png');
+        $this->analyzeExpense('keels-2.jpg');
+//        $this->uploadInvoice('bill1.png');
+    }
+
+    public function uploadInvoice($filePath)
+    {
+//        $request->validate([
+//            'invoice' => 'required|file|mimes:jpeg,png,pdf',
+//        ]);
+//
+//        $filePath = $request->file('invoice')->store('invoices', 'public');
+
+        $expenseResponse = $this->analyzeExpenseDocument(storage_path("app/public/{$filePath}"));
+
+        $summaryFields = $this->extractSummaryFields($expenseResponse);
+        $lineItems = $this->extractLineItems($expenseResponse);
+
+        dd($lineItems);
+        return response()->json([
+            'summary_fields' => $summaryFields,
+            'line_items' => $lineItems,
+        ]);
     }
 
     public function analyzeExpense($filePath)
@@ -33,8 +54,48 @@ class AwsTest extends Controller
         ]);
 
         fclose($file);
+
+        $summaryFields = $this->extractSummaryFields($result);
+        $lineItems = $this->extractLineItems($result);
+        dd($lineItems);
         dd(response()->json($result->toArray()));
         return $result->toArray();
+    }
+
+    private function extractSummaryFields($expenseResponse)
+    {
+        $summaryFields = [];
+
+        if (isset($expenseResponse['ExpenseDocuments'][0]['SummaryFields'])) {
+            foreach ($expenseResponse['ExpenseDocuments'][0]['SummaryFields'] as $field) {
+                $name = $field['Type']['Text'] ?? 'Unknown';
+                $value = $field['ValueDetection']['Text'] ?? null;
+                $summaryFields[$name] = $value;
+            }
+        }
+
+        return $summaryFields;
+    }
+
+    private function extractLineItems($expenseResponse)
+    {
+        $lineItems = [];
+
+        if (isset($expenseResponse['ExpenseDocuments'][0]['LineItemGroups'])) {
+            foreach ($expenseResponse['ExpenseDocuments'][0]['LineItemGroups'] as $lineItemGroup) {
+                foreach ($lineItemGroup['LineItems'] as $lineItem) {
+                    $item = [];
+                    foreach ($lineItem['LineItemExpenseFields'] as $field) {
+                        $name = $field['Type']['Text'] ?? 'Unknown';
+                        $value = $field['ValueDetection']['Text'] ?? null;
+                        $item[$name] = $value;
+                    }
+                    $lineItems[] = $item;
+                }
+            }
+        }
+
+        return $lineItems;
     }
     public function analyzeDocument($filePath){
         $client = new TextractClient([
