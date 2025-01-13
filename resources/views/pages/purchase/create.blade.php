@@ -18,8 +18,8 @@
 
         @if (session('success'))
             <div class="alert alert-success">
-                {{ session('success') }}
-                <p>File Path: {{ session('path') }}</p>
+                {{ session('success') }} <br/><br/>
+                <a href="{{ url('purchaseInvoiceShow', session('invoiceId')) }}" ><button type="button" class="btn btn-warning">View invoice results</button></a>
             </div>
         @endif
 

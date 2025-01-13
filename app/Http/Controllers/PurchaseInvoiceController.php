@@ -7,20 +7,29 @@ use App\Models\PurchaseInvoiceItem;
 use Illuminate\Http\Request;
 use App\Services\AWS\TextractService;
 use App\Services\PurchaseDataParser;
+use App\Services\FileUploadService;
 use Illuminate\Support\Facades\Log;
 use App\Repositories\PurchaseInvoiceRepository;
+use Illuminate\Support\Facades\Session;
 
 class PurchaseInvoiceController extends Controller
 {
     protected $textractService;
     protected $purchaseDataParser;
+    protected $fileUploadService;
     protected PurchaseInvoiceRepository $purchaseInvoiceRepository;
 
-    public function __construct(TextractService $textractService, PurchaseDataParser $purchaseDataParser, PurchaseInvoiceRepository $purchaseInvoiceRepository)
+    public function __construct(
+        TextractService $textractService,
+        PurchaseDataParser $purchaseDataParser,
+        FileUploadService $fileUploadService,
+        PurchaseInvoiceRepository $purchaseInvoiceRepository
+    )
     {
-        $this->textractService = $textractService;
-        $this->purchaseDataParser = $purchaseDataParser;
-        $this->purchaseInvoiceRepository = $purchaseInvoiceRepository;
+        $this->textractService              = $textractService;
+        $this->purchaseDataParser           = $purchaseDataParser;
+        $this->fileUploadService            = $fileUploadService;
+        $this->purchaseInvoiceRepository    = $purchaseInvoiceRepository;
     }
 
     public function index()
@@ -42,24 +51,31 @@ class PurchaseInvoiceController extends Controller
                 'file' => 'required|mimes:jpg,jpeg,png,pdf|max:2048', // 2MB max
             ]);
 
-            $file = $request->file('file')->store('uploads');
-            $filePath = storage_path('app/private/' . $file);
+            $file = $request->file('file');
+
+            // Store the file
+            $path = $this->fileUploadService->storeFile($file, 'uploads');
 
             // Process the file using Textract service
-            $expenseResponse = $this->textractService->analyzeExpenseDocument($filePath);
+            $expenseResponse = $this->textractService->analyzeExpenseDocument($file);
 
             // Extract and normalize data
             $summaryFields = $this->purchaseDataParser->normalizeInvoide(
                 $this->textractService->extractSummaryFields($expenseResponse)
             );
 
+            // Normalize purchase invoice data
             $lineItems = $this->purchaseDataParser->normalizeInvoiceItem(
                 $this->textractService->extractLineItems($expenseResponse)
             );
 
-            $this->purchaseInvoiceRepository->createWithItems($summaryFields, $lineItems);
+            // Save invoice
+            $purchaseInvoice = $this->purchaseInvoiceRepository->createWithItems($summaryFields, $lineItems,$path);
 
-            return back()->with('success', 'File uploaded successfully.')->with('path', $file);
+            //save invoice id to session
+            Session::put('invoiceId', $purchaseInvoice->id);
+
+            return back()->with('success', 'File uploaded successfully.')->with('invoiceId', $purchaseInvoice->id);
         } catch (\Exception $e) {
             Log::error('Error storing purchase invoice: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to create purchase invoice'], 500);

@@ -16,6 +16,7 @@ class PurchaseInvoice extends Model
         'invoice_number',
         'total_amount',
         'purchase_date',
+        'file_path',
     ];
 
     public function user(): BelongsTo

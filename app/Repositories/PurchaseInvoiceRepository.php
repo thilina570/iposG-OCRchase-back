@@ -12,7 +12,7 @@ class PurchaseInvoiceRepository
         return PurchaseInvoice::orderBy('id', 'DESC')->get();
     }
 
-    public function createWithItems(array $summaryFields, array $lineItems)
+    public function createWithItems(array $summaryFields, array $lineItems, string $filePath)
     {
         // Save the purchase invoice and its items
         $purchaseInvoice = PurchaseInvoice::create([
@@ -20,6 +20,7 @@ class PurchaseInvoiceRepository
             'invoice_number' => $summaryFields['invoice_number'],
             'total_amount'   => $summaryFields['total_amount'],
             'purchase_date'  => $summaryFields['purchase_date'],
+            'file_path'      => $filePath,
         ]);
 
         if (!empty($lineItems)) {

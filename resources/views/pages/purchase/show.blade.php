@@ -9,6 +9,7 @@
         </div>
         <div class="col-auto ms-auto">
             <a href="{{ route('purchaseInvoice') }}" ><button type="button" class="btn btn-primary">List Invoice</button></a>
+            <a href="{{ route('purchaseInvoiceCreate') }}" ><button type="button" class="btn btn-primary">Create Invoice</button></a>
         </div>
     </div>
 @endsection
@@ -45,15 +46,22 @@
                         </tr>
                     </table>
                 </div>
-                <iframe
-                    src="/bill-asoka.jpeg"
-                    width="100%"
-                    height="600"
-                    style="border: none;"
-                >
-                    Your browser does not support iframes.
-                </iframe>
+                @php
+                    $file_type = substr($invoice->file_path, -3);
+                @endphp
 
+                @if($file_type === 'pdf')
+                    <iframe
+                        src="{{ asset('storage/'.$invoice->file_path) }}"
+                        width="100%"
+                        height="600"
+                        style="border: none;"
+                    >
+                        Your browser does not support iframes.
+                    </iframe>
+                @else
+                    <img src="{{ asset('storage/'.$invoice->file_path) }}" width="100%" height="600">
+                @endif
             </div>
             <div class="col-lg-9 col-sm-12">
                 <table class="table table-striped">
