@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PurchaseInvoice;
-use App\Models\PurchaseInvoiceItem;
 use Illuminate\Http\Request;
 use App\Services\AWS\TextractService;
 use App\Services\PurchaseDataParser;
@@ -84,7 +82,7 @@ class PurchaseInvoiceController extends Controller
 
     public function show($id)
     {
-        $invoice = PurchaseInvoice::with('user','items')->findOrFail($id);
+        $invoice = $this->purchaseInvoiceRepository->getInvoice($id);
         return view('pages.purchase.show', ['invoice' => $invoice]);
     }
 
