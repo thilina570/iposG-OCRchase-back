@@ -9,7 +9,7 @@ class PurchaseInvoiceRepository
 {
     public function getAll()
     {
-        return PurchaseInvoice::all();
+        return PurchaseInvoice::orderBy('id', 'DESC')->get();
     }
 
     public function createWithItems(array $summaryFields, array $lineItems)

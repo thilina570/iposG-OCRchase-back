@@ -26,13 +26,12 @@ class PurchaseInvoiceController extends Controller
     public function index()
     {
         $invoices = $this->purchaseInvoiceRepository->getAll();
-        return view('purchaseInvoiceIndex', ['invoices' => $invoices]);
+        return view('pages.purchase.index', ['invoices' => $invoices]);
     }
 
     public function create()
     {
-//        $invoices = PurchaseInvoice::all();
-        return view('purchaseInvoiceCreate');
+        return view('pages.purchase.create');
     }
 
     public function store(Request $request)
@@ -69,7 +68,8 @@ class PurchaseInvoiceController extends Controller
 
     public function show($id)
     {
-
+        $invoice = PurchaseInvoice::with('user','items')->findOrFail($id);
+        return view('pages.purchase.show', ['invoice' => $invoice]);
     }
 
 }
